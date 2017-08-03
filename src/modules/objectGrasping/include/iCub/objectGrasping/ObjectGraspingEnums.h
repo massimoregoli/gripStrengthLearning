@@ -85,9 +85,16 @@ namespace iCub {
 
         enum TaskState  {
 
-            SET_ARM_IN_START_POSITION,
-            WAIT,
-            EXECUTE_EXPLORATION
+            EXECUTE,
+            TRANSITION,
+            WAIT
+        };
+
+        enum YarpPort  {
+
+            STABLE_GRASP,
+            OTFR,
+            ARE
         };
     }
 }

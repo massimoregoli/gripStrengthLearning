@@ -6,6 +6,7 @@
 #include "iCub/objectGrasping/util/PortsUtil.h"
 #include "iCub/objectGrasping/data/RPCCommandsData.h"
 #include "iCub/objectGrasping/data/ConfigData.h"
+#include "iCub/objectGrasping/ObjectGraspingEnums.h"
 
 #include <string>
 
@@ -29,14 +30,9 @@ namespace iCub {
             bool closing;
             TaskState taskState;
             int stepCounter;
-            int maxXStep;
-            int maxYStep;
-            int maxCounter;
-            bool complianceEnabled;
 
             /* ****** RPC Ports                                     ****** */
             yarp::os::RpcServer portIncomingCommandsRPC;
-            yarp::os::RpcClient portOutgoingCommandsRPC;
 
             iCub::objectGrasping::RPCCommandsUtil rpcCmdUtil;
             iCub::objectGrasping::RPCCommandsData rpcCmdData;
@@ -45,7 +41,7 @@ namespace iCub {
             iCub::objectGrasping::ControllersUtil *controllersUtil;
 
             /* ******* Ports utility                          ******* */
-            //                iCub::objectGrasping::PortsUtil *portsUtil;
+            iCub::objectGrasping::PortsUtil *portsUtil;
 
             /* ******* Config Data                            ******* */
             ConfigData *configData;
@@ -61,11 +57,8 @@ namespace iCub {
             virtual bool configure(yarp::os::ResourceFinder &rf);
             virtual bool updateModule();
             virtual bool interruptModule();
-            virtual bool respond(const yarp::os::Bottle& command, yarp::os::Bottle& reply);
+            virtual bool respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply);
             virtual bool close();
-
-            void sendCommand(std::string command);
-            void sendCommand(std::string command, double value);
 
             /* ****** RPC Methods                                  ****** */
             bool start();
@@ -77,6 +70,7 @@ namespace iCub {
             void task(iCub::objectGrasping::RPCTaskCmdArgName paramName, iCub::objectGrasping::TaskName taskName, yarp::os::Value paramValue);
             void view(iCub::objectGrasping::RPCViewCmdArgName paramName);
             void help();
+
         };
     }
 }

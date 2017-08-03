@@ -45,11 +45,11 @@ bool ObjectGraspingModule::configure(ResourceFinder &rf) {
 
     /* ****** Configure the Module                            ****** */
     moduleName = rf.check("name", Value("objectGrasping")).asString().c_str();
-    period = rf.check("period", 1.0).asDouble();
+    period = rf.check("period", 0.5).asDouble();
 
     /* ******* Open ports                                       ******* */
     portIncomingCommandsRPC.open("/objectGrasping/incomingCmd:i");
-    portOutgoingCommandsRPC.open("/objectGrasping/graspTaskCmd:o");
+
     attach(portIncomingCommandsRPC);
 
     rpcCmdUtil.init(&rpcCmdData);
@@ -63,25 +63,21 @@ bool ObjectGraspingModule::configure(ResourceFinder &rf) {
         return false;
     }
 
+    // initialize ports
+    portsUtil = new PortsUtil();
+    if (!portsUtil->init(rf,&rpcCmdUtil)) {
+        cout << dbgTag << "failed to initialize ports utility\n";
+        return false;
+    }
+
     // save current arm position, to be restored when the thread ends
     if (!controllersUtil->saveCurrentArmPosition()) {
         cout << dbgTag << "failed to store current arm position\n";
         return false;
     }
 
-
-    complianceEnabled = true;
-    taskState = SET_ARM_IN_START_POSITION;
+    taskState = WAIT;
     stepCounter = 0;
-    maxXStep = 1;
-    maxYStep = 9;
-    maxCounter = maxXStep * maxYStep;
-
-    if (complianceEnabled) controllersUtil->saveCurrentStiffness();
-
-    if (complianceEnabled) controllersUtil->setStiffness();
-
-    //controllersUtil->enableTorsoJoints();
 
     cout << dbgTag << "Started correctly. \n";
 
@@ -95,58 +91,88 @@ bool ObjectGraspingModule::configure(ResourceFinder &rf) {
 bool ObjectGraspingModule::updateModule() {
 
     std::stringstream cmd;
+    std::stringstream gripStrengthCommand("");
+    yarp::os::Bottle returnMessage;
+    std::string objectName;
 
     switch (taskState){
 
-    case SET_ARM_IN_START_POSITION:
-        if (controllersUtil->setArmInStartPosition(configData->cartesianMode)) {
-            taskState = WAIT;
-        }
-        else{
-            cout << dbgTag << "failed to set the arm in start position\n";
-            return false;
-        }
-        break;
-
     case WAIT:
+
         // do nothing
+
         break;
 
-    case EXECUTE_EXPLORATION:
+    case EXECUTE:
 
-        if (stepCounter == 0){
-            controllersUtil->saveCurrentPose();
+        // wait for the object to be ready
+        yarp::os::Time::delay(1);
+
+        // start tracking
+        portsUtil->sendCommand(ARE, "track motion no_sacc");
+
+        // wait for the classifier to stabilize the response
+        yarp::os::Time::delay(3);
+
+        // ask which is the object
+        portsUtil->askWhichObject(returnMessage);
+        objectName = returnMessage.get(1).asString();
+
+        // retrieve grip_strength associated to <what>
+        double gripStrength = 30;
+        if (objectName == "book"){
+            gripStrength = 95;
         }
-
-        int yStep = stepCounter%maxYStep;
-        int xStep = stepCounter / maxYStep;
-        if (xStep % 2 == 1){
-            yStep = maxYStep - 1 - yStep;
+        else if (objectName == "papercup"){
+            gripStrength = 25;
         }
+        gripStrengthCommand << "set control.high.grip_strength " << gripStrength;
 
+        // set the grip strength
+        portsUtil->sendCommand(STABLE_GRASP, gripStrengthCommand.str());
 
+        // TODO say "ok, I will grasp the <what>" (optional)
 
-        std::cout << "step " << stepCounter << " - going to (" << yStep << " " << xStep << ")" << std::endl;
-        
-        controllersUtil->goToXY(xStep, yStep);
+        // look at the hand
+//        portsUtil->sendCommand(ARE, "idle"); // CHECK IF IT IS NECESSARY
+        portsUtil->sendCommand(ARE, "look hand left");
 
-        controllersUtil->goDown();
+        // set the robot in task position
+        controllersUtil->setArmInStartPosition(); // COPY THE HAND JOINTS
 
-        controllersUtil->goToXY(xStep, yStep);
+        // grasp the object
+        portsUtil->sendCommand(STABLE_GRASP, "grasp");
 
-        // total waiting time = goToXYTrajTime + 1 + goDownTrajTime + waitDown = 7
+        // wait a little while holding the object
+        yarp::os::Time::delay(5);
+
+        portsUtil->sendCommand(STABLE_GRASP, "open false");
+
+        // wait a little while opening the hand
+        yarp::os::Time::delay(1);
+
+        portsUtil->sendCommand(ARE, "look (\"cartesian\" 2 0 0.4)");
+
+        controllersUtil->restorePreviousArmPosition();
+
+        taskState = TRANSITION;
 
         stepCounter++;
 
-        if (stepCounter == maxCounter){
+        break;
 
-            std::cout << "EXPLORATION COMPLETED" << std::endl;
 
+    case TRANSITION:
+
+        if (stepCounter == 2){
             taskState = WAIT;
-            stepCounter = 0;
+        }
+        else {
+            taskState = EXECUTE;
         }
 
         break;
+
 
     }
 
@@ -162,7 +188,7 @@ bool ObjectGraspingModule::interruptModule() {
 
     // Interrupt port
     portIncomingCommandsRPC.interrupt();
-    portOutgoingCommandsRPC.interrupt();
+    portsUtil->interrupt();
 
     cout << dbgTag << "Interrupted correctly. \n";
 
@@ -172,7 +198,7 @@ bool ObjectGraspingModule::interruptModule() {
 
 /* *********************************************************************************************************************** */
 /* ******* Manage commands coming from RPC Port                             ********************************************** */
-bool ObjectGraspingModule::respond(const yarp::os::Bottle& command, yarp::os::Bottle& reply){
+bool ObjectGraspingModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply){
 
     rpcCmdUtil.processCommand(command);
 
@@ -216,7 +242,6 @@ bool ObjectGraspingModule::close() {
     cout << dbgTag << "Closing. \n";
 
     //controllersUtil->disableTorsoJoints();
-    if (complianceEnabled) controllersUtil->restoreStiffness();
     controllersUtil->restorePreviousArmPosition();
 
     controllersUtil->release();
@@ -225,7 +250,7 @@ bool ObjectGraspingModule::close() {
 
     // Close port
     portIncomingCommandsRPC.close();
-    portOutgoingCommandsRPC.close();
+    portsUtil->release();
 
     cout << dbgTag << "Closed. \n";
 
@@ -253,15 +278,14 @@ bool ObjectGraspingModule::start() {
 
 bool ObjectGraspingModule::demo() {
 
-    yarp::os::Time::delay(3);
-    taskState = EXECUTE_EXPLORATION;
+    taskState = EXECUTE;
 
     return true;
 }
 
 bool ObjectGraspingModule::home() {
 
-    taskState = SET_ARM_IN_START_POSITION;
+//    taskState = SET_ARM_IN_START_POSITION;
 
     return true;
 }
@@ -295,22 +319,3 @@ void ObjectGraspingModule::help(){
 
 
 
-void ObjectGraspingModule::sendCommand(std::string command){
-
-    yarp::os::Bottle message;
-
-    rpcCmdUtil.createBottleMessage(command, message);
-
-    portOutgoingCommandsRPC.write(message);
-
-}
-
-void ObjectGraspingModule::sendCommand(std::string command, double value){
-
-    yarp::os::Bottle message;
-
-    rpcCmdUtil.createBottleMessage(command, value, message);
-
-    portOutgoingCommandsRPC.write(message);
-
-}

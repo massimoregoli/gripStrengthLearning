@@ -171,74 +171,34 @@ bool ControllersUtil::saveCurrentControlMode(){
 
 
 /* ******* Place arm in grasping position                                   ********************************************** */
-bool ControllersUtil::setArmInStartPosition(bool cartesianMode){
+bool ControllersUtil::setArmInStartPosition(){
 
     cout << dbgTag << "Reaching arm grasp position ... \t";
 
 
-    if (cartesianMode){
+    setPositionControlModeToArm(true, true);
 
+    // Arm
+    iPos->positionMove(0, -29);
+    iPos->positionMove(1, 54);
+    iPos->positionMove(2, -22);
+    iPos->positionMove(3, 45);
 
-        setPositionControlModeToArm(true, true);
+    iPos->positionMove(4, -3);
+    iPos->positionMove(5, 17);
+    iPos->positionMove(6, 7);
+    iPos->positionMove(7, 15);
 
+    // Hand
+    iPos->positionMove(8, 72);
+    iPos->positionMove(9, 0);
+    iPos->positionMove(10, 0);
+    iPos->positionMove(11, 0);
+    iPos->positionMove(12, 0);
+    iPos->positionMove(13, 0);
+    iPos->positionMove(14, 0);
+    iPos->positionMove(15, 0);
 
-        double joints[16] = {-20.879121, 19.142857, 21.76, 80.076923, -17.999561, -15.746154, -1.8, 41.850492, 9.783158, 58.775036, 2.183073, 9.6, 18.983727, -0.011117, 19.406248, 4.139908};
-//        double joints[16] = {-17.098901, 20.197802, 24.397363, 82.186813, -21.599544, -20.175824, -3.648352, 42.987825,9.783158, 59.295328, -2.175808, 7.6, 18.983727, -0.011117, 17.164096, 2.758692};
-//        double joints[16] = {-14, 23.186813, 25.716044, 85.967033, -22.8, -21.582418, -3, 43.556491, 1.233265, 56.693871, -13.436251, 6.4, 17.81913, -0.011117, 17.164096, 3.219098};
-//        double joints[16] = {-19.032967, 26.087912, 24.397363, 84.56044, -27.037726, -19.648352, -0.131868, 45.262491, 0.220777, 40.044547, -14.162732, 6.4, 15.878137, -0.011117, 15.669327, 3.219098};
-//        double joints[16] = {-18.857143, 25.120879, 26.155604, 85.263736, -24.811793, -17.362637, 1.450549, 44.693824, 17.995555, 24.956098, -12.709771, 6.8, 12.772547, -0.011117, 16.043019, 2.758692};
-//        double joints[16] = {0.21978, 13.428571, 14.19956, 84.384615, -20.069835, -10.32967, -17.89011, 34.457828, 43.307739, 1.542986, 20.708318, 2.8, 25.194907, -0.011117, 12.306099, 5.060718};
-
-               
-        // Arm
-        iPos->positionMove(0, joints[0]);
-        iPos->positionMove(1, joints[1]);
-        iPos->positionMove(2, joints[2]);
-        iPos->positionMove(3, joints[3]);
-
-        iPos->positionMove(4, joints[4]);// 0
-        iPos->positionMove(5, joints[5]);// 1
-        iPos->positionMove(6, joints[6]);// 1
-        iPos->positionMove(7, joints[7]);
-
-        // Hand
-        iPos->positionMove(8, joints[8]);
-        iPos->positionMove(9, joints[9]);
-        iPos->positionMove(10, joints[10]);
-        iPos->positionMove(11, joints[11]);
-        iPos->positionMove(12, joints[12]);
-        iPos->positionMove(13, joints[13]);
-        iPos->positionMove(14, joints[14]);
-        iPos->positionMove(15, joints[15]);
-
-
-    }
-    else {
-
-        setPositionControlModeToArm(true, true);
-
-        // Arm
-        iPos->positionMove(0, -29);
-        iPos->positionMove(1, 54);
-        iPos->positionMove(2, -22);
-        iPos->positionMove(3, 45);
-
-        iPos->positionMove(4, -3);
-        iPos->positionMove(5, 17);
-        iPos->positionMove(6, 7);
-        iPos->positionMove(7, 15);
-
-        // Hand
-        iPos->positionMove(8, 72);
-        iPos->positionMove(9, 0);
-        iPos->positionMove(10, 0);
-        iPos->positionMove(11, 0);
-        iPos->positionMove(12, 0);
-        iPos->positionMove(13, 0);
-        iPos->positionMove(14, 0);
-        iPos->positionMove(15, 0);
-
-    }
 
     // Check motion done
     waitMoveDone(10, 1);

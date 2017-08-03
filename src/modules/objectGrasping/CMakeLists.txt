@@ -5,7 +5,7 @@
 # 
 
 
-set(MODULENAME objectGrasping)
+set(MODULENAME gripStrengthLearning)
 
 # Search for source code.
 set(INC_HEADERS
