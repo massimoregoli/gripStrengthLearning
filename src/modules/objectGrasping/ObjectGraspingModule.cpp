@@ -94,6 +94,7 @@ bool ObjectGraspingModule::updateModule() {
     std::stringstream gripStrengthCommand("");
     yarp::os::Bottle returnMessage;
     std::string objectName;
+    double gripStrength = 30;
 
     switch (taskState){
 
@@ -112,21 +113,21 @@ bool ObjectGraspingModule::updateModule() {
         portsUtil->sendCommand(ARE, "track motion no_sacc");
 
         // wait for the classifier to stabilize the response
-        yarp::os::Time::delay(3);
+        yarp::os::Time::delay(4);
 
         // ask which is the object
         portsUtil->askWhichObject(returnMessage);
         objectName = returnMessage.get(1).asString();
+        std::cout << objectName << std::endl;
 
         // retrieve grip_strength associated to <what>
-        double gripStrength = 30;
         if (objectName == "book"){
-            gripStrength = 95;
+            gripStrength = 30;//120;
         }
         else if (objectName == "papercup"){
-            gripStrength = 25;
+            gripStrength = 30;
         }
-        gripStrengthCommand << "set control.high.grip_strength " << gripStrength;
+        gripStrengthCommand << "set control.high.gripStrength " << gripStrength;
 
         // set the grip strength
         portsUtil->sendCommand(STABLE_GRASP, gripStrengthCommand.str());
@@ -134,25 +135,31 @@ bool ObjectGraspingModule::updateModule() {
         // TODO say "ok, I will grasp the <what>" (optional)
 
         // look at the hand
-//        portsUtil->sendCommand(ARE, "idle"); // CHECK IF IT IS NECESSARY
+        //portsUtil->sendCommand(ARE, "idle"); // CHECK IF IT IS NECESSARY
         portsUtil->sendCommand(ARE, "look hand left");
 
         // set the robot in task position
         controllersUtil->setArmInStartPosition(); // COPY THE HAND JOINTS
 
+        // wait a little while waiting the hand to be ready (the arm is ready because of the checkMotionDone())
+        yarp::os::Time::delay(1);
+
         // grasp the object
         portsUtil->sendCommand(STABLE_GRASP, "grasp");
 
         // wait a little while holding the object
-        yarp::os::Time::delay(5);
+        yarp::os::Time::delay(13);
 
-        portsUtil->sendCommand(STABLE_GRASP, "open false");
+        //portsUtil->openHand();
+        portsUtil->sendCommand(STABLE_GRASP, "open");
 
         // wait a little while opening the hand
-        yarp::os::Time::delay(1);
+        yarp::os::Time::delay(2);
 
-        portsUtil->sendCommand(ARE, "look (\"cartesian\" 2 0 0.4)");
+        // look in front
+        portsUtil->lookInFront();
 
+        // restore previous arm position
         controllersUtil->restorePreviousArmPosition();
 
         taskState = TRANSITION;
@@ -166,6 +173,7 @@ bool ObjectGraspingModule::updateModule() {
 
         if (stepCounter == 2){
             taskState = WAIT;
+            stepCounter = 0;
         }
         else {
             taskState = EXECUTE;

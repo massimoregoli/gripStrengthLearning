@@ -42,6 +42,8 @@ namespace iCub {
             void sendCommand(iCub::objectGrasping::YarpPort yarpPort, std::string command);
             void sendCommand(iCub::objectGrasping::YarpPort yarpPort, std::string command, double value);
             void askWhichObject(yarp::os::Bottle &returnMessage);
+            void lookInFront();
+            void openHand();
 
         private:
 

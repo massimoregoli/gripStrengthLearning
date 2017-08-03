@@ -42,6 +42,7 @@ bool PortsUtil::init(yarp::os::ResourceFinder &rf, iCub::objectGrasping::RPCComm
 //        cout << dbgTag << "could not open " << logDataPortName << " port \n";
 //        return false;
 //    }
+
     if (!portOutgoingCommandsRPC.open(outgoingCommandsRPCPortName)){
         cout << dbgTag << "could not open " << outgoingCommandsRPCPortName << " port \n";
         return false;
@@ -60,18 +61,18 @@ bool PortsUtil::init(yarp::os::ResourceFinder &rf, iCub::objectGrasping::RPCComm
 //        cout << dbgTag << "could not connect ports: " << icubSkinCompPortName << " -> " << moduleSkinCompPortName << "\n";
 //        return false;
 //    }
-    if (!Network::connect(areOutRPCPortName, areInRPCPortName)){
-        cout << dbgTag << "could not connect ports: " << areOutRPCPortName << " -> " << areInRPCPortName << "\n";
-        return false;
-    }
-    if (!Network::connect(otfrOutRPCPortName, otfrInRPCPortName)){
-        cout << dbgTag << "could not connect ports: " << otfrOutRPCPortName << " -> " << otfrInRPCPortName << "\n";
-        return false;
-    }
-    if (!Network::connect(outgoingCommandsRPCPortName, stableGraspInRPCPortName)){
-        cout << dbgTag << "could not connect ports: " << outgoingCommandsRPCPortName << " -> " << stableGraspInRPCPortName << "\n";
-        return false;
-    }
+//    if (!Network::connect(areOutRPCPortName, areInRPCPortName)){
+//        cout << dbgTag << "could not connect ports: " << areOutRPCPortName << " -> " << areInRPCPortName << "\n";
+//        return false;
+//    }
+//    if (!Network::connect(otfrOutRPCPortName, otfrInRPCPortName)){
+//        cout << dbgTag << "could not connect ports: " << otfrOutRPCPortName << " -> " << otfrInRPCPortName << "\n";
+//        return false;
+//    }
+//    if (!Network::connect(outgoingCommandsRPCPortName, stableGraspInRPCPortName)){
+//        cout << dbgTag << "could not connect ports: " << outgoingCommandsRPCPortName << " -> " << stableGraspInRPCPortName << "\n";
+//        return false;
+//    }
 
 
     return true;
@@ -145,3 +146,33 @@ void PortsUtil::askWhichObject(yarp::os::Bottle &returnMessage){
     portOTFROutRPC.write(message,returnMessage);
 
 }
+
+void PortsUtil::lookInFront(){
+
+    yarp::os::Bottle message;
+
+    message.clear();
+
+    message.add(Value("look"));
+
+    message.add(*Value::makeList("-2 0 0.4"));
+
+    portAREOutRPC.write(message);
+
+}
+
+void PortsUtil::openHand(){
+
+    yarp::os::Bottle message;
+    bool wide = false;
+
+    message.clear();
+
+    message.add(Value("open"));
+
+    message.add(Value("false"));
+
+    portOutgoingCommandsRPC.write(message);
+
+}
+

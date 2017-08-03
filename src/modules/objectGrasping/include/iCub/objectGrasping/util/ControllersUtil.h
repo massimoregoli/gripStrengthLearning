@@ -67,8 +67,6 @@ namespace iCub {
 
             bool setArmInStartPosition();
 
-            bool setArmInGraspPosition(bool back);
-
             bool raiseArm(bool cartesianMode);
 
             bool goToXY(int x, int y);

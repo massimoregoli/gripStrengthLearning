@@ -29,8 +29,9 @@ bool ControllersUtil::init(yarp::os::ResourceFinder &rf){
     jointsStoredControlMode.resize(8, VOCAB_CM_POSITION);
 
     string robotName = rf.check("robot", Value("icub"), "The robot name.").asString().c_str();
-    whichHand = rf.check("whichHand", Value("right"), "The hand to be used for the grasping.").asString().c_str();
-
+    whichHand = rf.check("whichHand", Value("left"), "The hand to be used for the grasping.").asString().c_str();
+whichHand = "left";
+std::cout << whichHand << std::endl;
     /* ******* Joint interfaces                     ******* */
     string arm = whichHand + "_arm";
     Property options;
@@ -179,25 +180,25 @@ bool ControllersUtil::setArmInStartPosition(){
     setPositionControlModeToArm(true, true);
 
     // Arm
-    iPos->positionMove(0, -29);
-    iPos->positionMove(1, 54);
-    iPos->positionMove(2, -22);
-    iPos->positionMove(3, 45);
+    iPos->positionMove(0, -35);
+    iPos->positionMove(1, 29);
+    iPos->positionMove(2, 21);
+    iPos->positionMove(3, 60);
 
-    iPos->positionMove(4, -3);
-    iPos->positionMove(5, 17);
-    iPos->positionMove(6, 7);
-    iPos->positionMove(7, 15);
+    iPos->positionMove(4, -20);
+    iPos->positionMove(5, 2);
+    iPos->positionMove(6, 3);
+    iPos->positionMove(7, 30);
 
     // Hand
-    iPos->positionMove(8, 72);
-    iPos->positionMove(9, 0);
-    iPos->positionMove(10, 0);
-    iPos->positionMove(11, 0);
-    iPos->positionMove(12, 0);
-    iPos->positionMove(13, 0);
-    iPos->positionMove(14, 0);
-    iPos->positionMove(15, 0);
+    iPos->positionMove(8, 35);
+    iPos->positionMove(9, 3);
+    iPos->positionMove(10, 48);
+    iPos->positionMove(11, 2);
+    iPos->positionMove(12, 64);
+    iPos->positionMove(13, 3);
+    iPos->positionMove(14, 57);
+    iPos->positionMove(15, 1);
 
 
     // Check motion done
@@ -360,63 +361,6 @@ std::cout << "target pose: " << xd[0] << " " << xd[1] << " " << xd[2] << std::en
     return true;
 
 }
-
-
-/* ******* Place arm in grasping position                                   ********************************************** */
-bool ControllersUtil::setArmInGraspPosition(bool cartesianMode, bool back) {
-
-    cout << dbgTag << "Reaching arm grasp position ... \t";
-
-    if (cartesianMode){
-
-        double sign = (whichHand == "left" ? 1 : -1);
-
-        if (!back){
-
-            incrementEndEffectorPosition(-0.08, sign*0.05, 0, 3.0);
-
-        }
-        else {
-
-            incrementEndEffectorPosition(0.02, 0, -0.13, 4.0);
-
-        }
-        return true;
-
-    }
-    else {
-
-        setPositionControlModeToArm(true, true);
-
-        // Arm
-        iPos->positionMove(0, -36);
-        iPos->positionMove(1, 30);
-        iPos->positionMove(2, -5);
-        iPos->positionMove(3, 45);
-
-        iPos->positionMove(4, -1);
-        iPos->positionMove(5, 18);
-        iPos->positionMove(6, 7);
-        iPos->positionMove(7, 15);
-
-        // Hand
-        //    iPos->positionMove(8 , 79);
-        //    iPos->positionMove(9 , 0);
-        //    iPos->positionMove(10, 0);// 29
-        //    iPos->positionMove(11, 0);
-        //    iPos->positionMove(12, 0);
-        //    iPos->positionMove(13, 0);
-        //    iPos->positionMove(14, 0);//15
-        //    iPos->positionMove(15, 0);
-
-        // Check motion done
-        waitMoveDone(10, 1, true);
-        cout << "Done. \n";
-
-        return true;
-    }
-}
-/* *********************************************************************************************************************** */
 
 /* ******* Place arm in grasping position                                   ********************************************** */
 bool ControllersUtil::raiseArm(bool cartesianMode) {
